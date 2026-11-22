@@ -2,9 +2,9 @@
   {
     "id": "tangkuban-parahu",
     "name": "Gunung Tangkuban Parahu",
-    "lat": -6.7596374,
-    "lon": 107.5994595,
-    "region_code": "32.17.01",
+    "lat": -6.7737501,
+    "lon": 107.6322007,
+    "region_code": "32.13.29",
     "category": "gunung",
     "opening_hours": {
       "mon": ["08:00", "17:00"],
