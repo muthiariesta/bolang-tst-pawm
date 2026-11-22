@@ -105,7 +105,7 @@ def weather(lat, lon, date):
 
 
 def route(a_lat, a_lon, b_lat, b_lon, mode="driving"):
-    """RouteLeg: distance_m, duration_s, source (osrm | estimate | cache)."""
+    """RouteLeg: distance_m, duration_s, geometry ([[lon, lat], ...] mengikuti jalan), source (osrm | estimate | cache)."""
     key = ("r", mode, round(a_lat, 4), round(a_lon, 4), round(b_lat, 4), round(b_lon, 4))
     hit = _get(key, ROUTE_TTL)
     if hit:
@@ -113,12 +113,14 @@ def route(a_lat, a_lon, b_lat, b_lon, mode="driving"):
     if mode == "driving":
         try:
             j = _call("osrm", f"https://router.project-osrm.org/route/v1/driving/{a_lon},{a_lat};{b_lon},{b_lat}",
-                      {"overview": "false"})
+                      {"overview": "simplified", "geometries": "geojson"})
             r = j["routes"][0]
-            out = {"distance_m": round(r["distance"]), "duration_s": round(r["duration"])}
+            geom = [[round(x, 5), round(y, 5)] for x, y in r["geometry"]["coordinates"]]
+            out = {"distance_m": round(r["distance"]), "duration_s": round(r["duration"]), "geometry": geom}
             _put(key, out)
             return {**out, "source": "osrm"}
         except Exception:
             pass
     km = haversine_km(a_lat, a_lon, b_lat, b_lon) * ROAD_FACTOR[mode]
-    return {"distance_m": round(km * 1000), "duration_s": round(km / SPEED_KMH[mode] * 3600), "source": "estimate"}
+    return {"distance_m": round(km * 1000), "duration_s": round(km / SPEED_KMH[mode] * 3600),
+            "geometry": [[a_lon, a_lat], [b_lon, b_lat]], "source": "estimate"}
