@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS places(
   id TEXT PRIMARY KEY, name TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL,
   region_code TEXT NOT NULL, category TEXT NOT NULL, opening_hours TEXT,
   default_visit_min INTEGER NOT NULL, outdoor INTEGER NOT NULL,
-  verified INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL);
+  verified INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL, photo TEXT);
 CREATE TABLE IF NOT EXISTS itineraries(
   id TEXT PRIMARY KEY, owner_id INTEGER NOT NULL REFERENCES users(id), status TEXT NOT NULL,
   params TEXT NOT NULL, order_ids TEXT NOT NULL, locked_ids TEXT NOT NULL, plan TEXT NOT NULL,
@@ -52,6 +52,9 @@ def conn():
 def init():
     with conn() as c:
         c.executescript(SCHEMA)
+        cols = {r[1] for r in c.execute("PRAGMA table_info(places)")}
+        if "photo" not in cols:  # migrasi database lama tanpa kolom foto
+            c.execute("ALTER TABLE places ADD COLUMN photo TEXT")
         if c.execute("SELECT COUNT(*) FROM places").fetchone()[0] == 0:
             for p in json.loads(SEED.read_text(encoding="utf-8")):
                 insert_place(c, p)
@@ -64,11 +67,12 @@ def init():
 
 def insert_place(c, p):
     c.execute(
-        "INSERT INTO places(id,name,lat,lon,region_code,category,opening_hours,default_visit_min,outdoor,verified,updated_at)"
-        " VALUES(?,?,?,?,?,?,?,?,?,?,?)",
+        "INSERT INTO places(id,name,lat,lon,region_code,category,opening_hours,default_visit_min,outdoor,verified,updated_at,photo)"
+        " VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",
         (p["id"], p["name"], p["lat"], p["lon"], p["region_code"], p["category"],
          json.dumps(p["opening_hours"]) if p.get("opening_hours") is not None else None,
-         p["default_visit_min"], int(p["outdoor"]), int(p.get("verified", False)), now()))
+         p["default_visit_min"], int(p["outdoor"]), int(p.get("verified", False)), now(),
+         json.dumps(p["photo"]) if p.get("photo") else None))
 
 
 def place_dict(r) -> dict:
@@ -76,6 +80,7 @@ def place_dict(r) -> dict:
     d["opening_hours"] = json.loads(d["opening_hours"]) if d["opening_hours"] else None
     d["outdoor"] = bool(d["outdoor"])
     d["verified"] = bool(d["verified"])
+    d["photo"] = json.loads(d["photo"]) if d.get("photo") else None
     return d
 
 

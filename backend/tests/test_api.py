@@ -204,3 +204,29 @@ def test_weather_contract_for_kisah(c, monkeypatch):
     days = c.get(f"/api/weather?lat=-6.9211&lon=107.6094&date={a}&end_date={b}").json()["days"]
     assert [x["date"] for x in days] == [a, (config.today() + timedelta(days=1)).isoformat(), b]
     assert c.get(f"/api/weather?lat=-6.9&lon=107.6&date={b}&end_date={a}").status_code == 422
+
+
+def test_photo_and_patch_place(c):
+    adm = login(c, "admin@jr.test", "adminpass123")
+    assert c.get("/api/places/curug-dago").json()["photo"] is None
+    body = {"photo": {"url": "https://example.org/curug.jpg", "credit": "Fotografer", "license": "CC BY-SA 4.0"}}
+    assert c.patch("/api/places/curug-dago", json=body, headers=user(c, "p@b.co")).status_code == 403
+    assert c.patch("/api/places/curug-dago", json={"photo": {"url": "http://x"}}, headers=adm).status_code == 422
+    j = c.patch("/api/places/curug-dago", json=body, headers=adm).json()
+    assert j["photo"]["url"] == "https://example.org/curug.jpg" and j["photo"]["credit"] == "Fotografer"
+    assert c.patch("/api/places/xxx", json=body, headers=adm).status_code == 404
+
+
+def test_migration_adds_photo_column(tmp_path, monkeypatch):
+    import sqlite3
+    from app import config, db
+    path = tmp_path / "old.db"
+    s = sqlite3.connect(path)
+    s.execute("CREATE TABLE places(id TEXT PRIMARY KEY, name TEXT NOT NULL, lat REAL NOT NULL, lon REAL NOT NULL,"
+              " region_code TEXT NOT NULL, category TEXT NOT NULL, opening_hours TEXT, default_visit_min INTEGER NOT NULL,"
+              " outdoor INTEGER NOT NULL, verified INTEGER NOT NULL DEFAULT 0, updated_at TEXT NOT NULL)")
+    s.commit(); s.close()
+    monkeypatch.setattr(config, "DB_PATH", str(path))
+    db.init()
+    cols = {r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(places)")}
+    assert "photo" in cols

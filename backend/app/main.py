@@ -151,6 +151,27 @@ def me(user=Depends(security.current_user)):
 HOURS = r"^([01]\d|2[0-3]):[0-5]\d$"
 
 
+class Photo(BaseModel):
+    url: str = Field(pattern=r"^https://", examples=["https://upload.wikimedia.org/wikipedia/commons/x/xx/Contoh.jpg"])
+    credit: Optional[str] = Field(default=None, max_length=200, examples=["Nama fotografer"])
+    license: Optional[str] = Field(default=None, max_length=80, examples=["CC BY-SA 4.0"])
+    source: Optional[str] = Field(default=None, max_length=300, description="Halaman asal foto")
+
+
+def _check_hours(v):
+    if v is None:
+        return v
+    if len(v) != 7:
+        raise ValueError("opening_hours wajib berisi ketujuh hari (mon sampai sun)")
+    import re
+    for day, rng in v.items():
+        if rng is None:
+            continue
+        if len(rng) != 2 or not all(re.match(HOURS, x) for x in rng) or rng[0] >= rng[1]:
+            raise ValueError(f"jam {day} harus [HH:MM, HH:MM] dengan jam buka < jam tutup")
+    return v
+
+
 class PlaceIn(BaseModel):
     id: str = Field(pattern=r"^[a-z0-9-]{3,60}$", examples=["kawah-putih"])
     name: str = Field(min_length=2, max_length=120)
@@ -166,18 +187,29 @@ class PlaceIn(BaseModel):
     default_visit_min: int = Field(ge=5, le=720)
     outdoor: bool
 
+    photo: Optional[Photo] = None
+
     @field_validator("opening_hours")
     @classmethod
     def _hours(cls, v):
-        if len(v) != 7:
-            raise ValueError("opening_hours wajib berisi ketujuh hari (mon sampai sun)")
-        import re
-        for day, rng in v.items():
-            if rng is None:
-                continue
-            if len(rng) != 2 or not all(re.match(HOURS, x) for x in rng) or rng[0] >= rng[1]:
-                raise ValueError(f"jam {day} harus [HH:MM, HH:MM] dengan jam buka < jam tutup")
-        return v
+        return _check_hours(v)
+
+
+class PlacePatch(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=2, max_length=120)
+    lat: Optional[float] = Field(default=None, ge=-90, le=90)
+    lon: Optional[float] = Field(default=None, ge=-180, le=180)
+    region_code: Optional[str] = Field(default=None, pattern=r"^\d{2}\.\d{2}\.\d{2}$")
+    category: Optional[str] = Field(default=None, pattern=r"^[a-z0-9-]{3,40}$")
+    opening_hours: Optional[Dict[Literal["mon", "tue", "wed", "thu", "fri", "sat", "sun"], Optional[List[str]]]] = None
+    default_visit_min: Optional[int] = Field(default=None, ge=5, le=720)
+    outdoor: Optional[bool] = None
+    photo: Optional[Photo] = None
+
+    @field_validator("opening_hours")
+    @classmethod
+    def _hours(cls, v):
+        return _check_hours(v)
 
 
 @r.get("/places", tags=["places"], summary="Daftar tempat di Katalog Tempat")
@@ -215,6 +247,24 @@ def add_place(p: PlaceIn, _=Depends(security.admin_user)):
         except sqlite3.IntegrityError:
             raise AppError(400, "PLACE_EXISTS", "ID tempat sudah dipakai.")
         return db.place_dict(c.execute("SELECT * FROM places WHERE id=?", (p.id,)).fetchone())
+
+
+@r.patch("/places/{place_id}", tags=["places"], summary="Ubah data tempat, termasuk foto (JWT admin)")
+def patch_place(place_id: str, p: PlacePatch, _=Depends(security.admin_user)):
+    fields = p.model_dump(exclude_unset=True)
+    if not fields:
+        raise AppError(422, "VALIDATION_ERROR", "Tidak ada field yang diubah.")
+    with db.conn() as c:
+        if not c.execute("SELECT 1 FROM places WHERE id=?", (place_id,)).fetchone():
+            raise AppError(404, "NOT_FOUND", "Tempat tidak ditemukan.")
+        for k, v in fields.items():
+            if k in ("opening_hours", "photo"):
+                v = json.dumps(v) if v is not None else None
+            elif k == "outdoor":
+                v = int(v)
+            c.execute(f"UPDATE places SET {k}=? WHERE id=?", (v, place_id))
+        c.execute("UPDATE places SET updated_at=? WHERE id=?", (db.now(), place_id))
+        return db.place_dict(c.execute("SELECT * FROM places WHERE id=?", (place_id,)).fetchone())
 
 
 # ================= route & weather =================
