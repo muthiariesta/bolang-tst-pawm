@@ -1,0 +1,102 @@
+[
+  {
+    "id": "tangkuban-parahu",
+    "name": "Gunung Tangkuban Parahu",
+    "lat": -6.7596374,
+    "lon": 107.5994595,
+    "region_code": "32.17.01",
+    "category": "gunung",
+    "opening_hours": {
+      "mon": ["08:00", "17:00"],
+      "tue": ["08:00", "17:00"],
+      "wed": ["08:00", "17:00"],
+      "thu": ["08:00", "17:00"],
+      "fri": ["08:00", "17:00"],
+      "sat": ["08:00", "17:00"],
+      "sun": ["08:00", "17:00"]
+    },
+    "default_visit_min": 90,
+    "outdoor": true,
+    "verified": true
+  },
+  {
+    "id": "orchid-forest-cikole",
+    "name": "Orchid Forest Cikole",
+    "lat": -6.7799539,
+    "lon": 107.632364,
+    "region_code": "32.17.01",
+    "category": "taman",
+    "opening_hours": {
+      "mon": ["10:00", "18:00"],
+      "tue": ["10:00", "18:00"],
+      "wed": ["10:00", "18:00"],
+      "thu": ["10:00", "18:00"],
+      "fri": ["09:00", "18:00"],
+      "sat": ["08:00", "19:00"],
+      "sun": ["08:00", "19:00"]
+    },
+    "default_visit_min": 120,
+    "outdoor": true,
+    "verified": true
+  },
+  {
+    "id": "curug-dago",
+    "name": "Curug Dago",
+    "lat": -6.8655593,
+    "lon": 107.6156121,
+    "region_code": "32.73.02",
+    "category": "air-terjun",
+    "opening_hours": {
+      "mon": ["08:00", "17:00"],
+      "tue": ["08:00", "17:00"],
+      "wed": ["08:00", "17:00"],
+      "thu": ["08:00", "17:00"],
+      "fri": ["08:00", "17:00"],
+      "sat": ["08:00", "17:00"],
+      "sun": ["08:00", "17:00"]
+    },
+    "default_visit_min": 60,
+    "outdoor": true,
+    "verified": true
+  },
+  {
+    "id": "museum-geologi",
+    "name": "Museum Geologi",
+    "lat": -6.9007162,
+    "lon": 107.6214553,
+    "region_code": "32.73.18",
+    "category": "museum",
+    "opening_hours": {
+      "mon": ["09:00", "15:00"],
+      "tue": ["09:00", "15:00"],
+      "wed": ["09:00", "15:00"],
+      "thu": ["09:00", "15:00"],
+      "fri": null,
+      "sat": ["09:00", "14:00"],
+      "sun": ["09:00", "14:00"]
+    },
+    "default_visit_min": 90,
+    "outdoor": false,
+    "verified": true
+  },
+  {
+    "id": "trans-studio-bandung",
+    "name": "Trans Studio Bandung",
+    "lat": -6.9255416,
+    "lon": 107.6336983,
+    "region_code": "32.73.12",
+    "category": "tempat-hiburan",
+    "opening_hours": {
+      "mon": ["10:00", "17:00"],
+      "tue": ["10:00", "17:00"],
+      "wed": ["10:00", "17:00"],
+      "thu": ["10:00", "17:00"],
+      "fri": ["10:00", "17:00"],
+      "sat": ["10:00", "17:00"],
+      "sun": ["10:00", "17:00"]
+    },
+    "default_visit_min": 240,
+    "outdoor": false,
+    "verified": true
+  }
+]
