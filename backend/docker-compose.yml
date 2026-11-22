@@ -15,7 +15,7 @@ services:
 
   gateway:
     image: nginx:1.28-alpine
-    ports: ["8080:80"]
+    ports: ["80:80"]
     volumes: ["./gateway/nginx.conf:/etc/nginx/conf.d/default.conf:ro"]
     depends_on: [core-service]
     mem_limit: 64m

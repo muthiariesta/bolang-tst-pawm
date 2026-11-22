@@ -2,8 +2,6 @@
 
 Bolang (bocah petualang) adalah aplikasi perencana jalan-jalan beberapa hari di Bandung Raya. Pengguna memilih tempat, tanggal, dan titik awal, lalu Bolang menyusun urutan kunjungan per hari beserta waktu tempuh, jam buka, dan prakiraan cuaca.
 
-Di ekosistem Jelajah Nusantara, layanan di balik Bolang bernama **Jelajah Rute**.
-
 | | |
 |---|---|
 | Kelas | II3160 TST × II3140 PWAM, K01 |
@@ -23,4 +21,4 @@ Petunjuk lengkap ada di README masing-masing folder.
 
 ## Integrasi
 
-Bolang memakai data dari dua kelompok lain: **Kisah & Kalender Budaya** (kisah dan acara budaya) dan **Xplore Bandung** (kuliner). Sebaliknya, Kisah & Kalender Budaya memakai endpoint cuaca dari layanan kami.
+Bolang memakai data dari dua kelompok lain: **Kisah & Kalender Budaya** (kisah dan acara budaya) dan **Xplore Bandung** (kuliner).
