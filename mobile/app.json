@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "Bolang",
+    "slug": "bolang",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#F4F8F6",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "id.ac.itb.s18224065.bolang"
+    },
+    "android": {
+      "package": "id.ac.itb.s18224065.bolang",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "backgroundColor": "#CFE9DC",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#CFE9DC"
+        }
+      ],
+      "expo-status-bar"
+    ]
+  }
+}
