@@ -1,14 +1,14 @@
 # Bolang · Microservice Jelajah Rute (TST)
 
-Microservice di balik aplikasi Bolang. Di ekosistem Jelajah Nusantara layanan ini bernama **Jelajah Rute**: penyusun itinerary wisata N hari di Bandung Raya. Layanan ini memperhitungkan jarak, waktu tempuh, jam buka, dan cuaca, dengan Katalog Tempat milik sendiri.
+Microservice di balik aplikasi Bolang: Penyusun itinerary wisata N hari di Bandung Raya. Layanan ini memperhitungkan jarak, waktu tempuh, jam buka, dan cuaca, dengan Katalog Tempat milik sendiri.
 
 | | |
 |---|---|
 | Kelas | II3160 TST × II3140 PWAM, K01 |
 | Tim | Muthia Ariesta Anggraeni (18224045, Backend TST) · Benedicta Sherin Chyntia Putri (18224065, Mobile PWAM) |
-| URL layanan | `https://bolang.stei.fun/api` |
-| Dokumentasi interaktif | `https://bolang.stei.fun/api/docs` (Swagger) · kontrak: `/api/openapi.json`, salinan di `docs/openapi.json` (root repo) |
-| Cek hidup | `GET https://bolang.stei.fun/api/health` |
+| URL layanan | `https://bertigasamatitut.stei.fun/api` |
+| Dokumentasi interaktif | `https://bertigasamatitut.stei.fun/api/docs` (Swagger) · kontrak: `/api/openapi.json`, salinan di `docs/openapi.json` (root repo) |
+| Cek hidup | `GET https://bertigasamatitut.stei.fun/api/health` |
 | Versi | 1.1.0 |
 
 Dokumen ini membahas microservice di folder `backend/` yang berjalan di STB. Gambaran proyek secara utuh ada di [README utama](../README.md), aplikasi mobile ada di [mobile/README.md](../mobile/README.md).
@@ -21,9 +21,9 @@ STB HG680P (Armbian, arm64, RAM 2 GB) hanya menjalankan container microservice. 
 
 | Container | Image | Batas | Fungsi |
 |---|---|---|---|
-| gateway | `nginx:1.28-alpine` | 64m, 0.25 CPU | Titik masuk tunggal, rate limit 60/menit per IP (pakai `CF-Connecting-IP`), CORS, batas body 64 KB |
+| gateway | `nginx:1.28-alpine`, port 80 | 64m, 0.25 CPU | Titik masuk tunggal, rate limit 60/menit per IP (pakai `CF-Connecting-IP`), CORS, batas body 64 KB |
 | core-service | FastAPI (Python 3.12), arm64 | 256m, 0.5 CPU | Katalog Tempat, penjadwalan itinerary, template, adapter OSRM & Open-Meteo dengan cache, auth JWT dan X-API-Key |
-| tunnel | `cloudflare/cloudflared` | 64m, 0.25 CPU | Akses publik ke `https://bolang.stei.fun` |
+| tunnel | `cloudflared` sebagai service systemd di STB | 64 MB (opsional lewat systemd) | Akses publik ke `https://bertigasamatitut.stei.fun`. Rute `/api/*` diarahkan ke `http://gateway:80` |
 | database | SQLite di volume `jr-data` | ikut core | Tidak ada port database yang terbuka |
 
 Semua container memakai `restart: unless-stopped` dan rotasi log `max-size: 10m, max-file: 3`. Rahasia disimpan di `.env` yang tidak di-commit.
@@ -32,7 +32,7 @@ Layanan inti tidak memanggil layanan tim lain. Data dari luar hanya OSRM (rute) 
 
 ## 2. Daftar endpoint
 
-Base URL: `https://bolang.stei.fun/api`. Path yang sama tanpa awalan `/api` juga dilayani.
+Base URL: `https://bertigasamatitut.stei.fun/api`. Lewat tunnel, hanya path berawalan `/api` yang diarahkan ke layanan ini. Path lain di domain yang sama mengarah ke aaPanel STB.
 
 | Method & path | Auth | Fungsi |
 |---|---|---|
@@ -87,7 +87,7 @@ Autentikasi dan otorisasi:
 ## 4. Contoh request
 
 ```bash
-BASE=https://bolang.stei.fun/api
+BASE=https://bertigasamatitut.stei.fun/api
 
 # Cek layanan
 curl $BASE/health
@@ -155,7 +155,7 @@ Potongan respons `POST /itineraries` (hari pertama, saat OSRM tidak terjangkau s
 
 | Butir | Kesepakatan |
 |---|---|
-| Path | `GET https://bolang.stei.fun/api/weather` (tanpa awalan `/api` juga jalan) |
+| Path | `GET https://bertigasamatitut.stei.fun/api/weather` |
 | Field wajib | `date`, `precipitation_probability` (integer 0 sampai 100), `fetched_at` (ISO 8601, WIB) |
 | Field tambahan | `precipitation_mm`, `temp_min`, `temp_max`, `weather_code` (kode WMO), `source` (`open-meteo` atau `cache`) |
 | Rentang | `end_date` didukung, hasil `{"days":[...]}` |
@@ -176,17 +176,36 @@ Potongan respons `POST /itineraries` (hari pertama, saat OSRM tidak terjangkau s
 
 ## 7. Menjalankan
 
-Di STB (atau laptop dengan Docker):
+Di STB (Armbian), dari folder repo:
 
 ```bash
-cd backend   # dari root repo
-cp .env.example .env          # isi JWT_SECRET, ADMIN_*, DEMO_PASSWORD, TUNNEL_TOKEN
-docker compose up -d --build  # gateway + core-service di http://localhost:8080
-docker compose --profile tunnel up -d   # nyalakan Cloudflare Tunnel
-docker stats --no-stream      # cek total RAM < 500 MB
+cd backend
+cp .env.example .env          # isi JWT_SECRET (openssl rand -hex 32), ADMIN_*, DEMO_PASSWORD
+docker compose build core-service
+docker compose up -d          # gateway di port 80, core-service di jaringan internal
+curl localhost/api/health     # {"status":"ok","service":"bolang",...}
+docker stats --no-stream      # Bolang memakai sekitar 50 MB (batas total 500 MB)
 ```
 
-Di Cloudflare Zero Trust, public hostname `bolang.stei.fun` diarahkan ke Service URL `http://gateway:80`.
+Cloudflare Tunnel berjalan sebagai service di STB, bukan sebagai container:
+
+```bash
+apt-get install -y cloudflared            # dari repo pkg.cloudflare.com
+mkdir -p /etc/cloudflared
+printf '%s' '<TOKEN_TUNNEL>' > /etc/cloudflared/token && chmod 600 /etc/cloudflared/token
+cloudflared service install <TOKEN_TUNNEL>
+echo "127.0.0.1 gateway" >> /etc/hosts    # nama gateway di rute tunnel = port 80 STB
+systemctl status cloudflared              # active (running)
+```
+
+Rute di dashboard Cloudflare:
+
+| Hostname dan path | Service |
+|---|---|
+| `bertigasamatitut.stei.fun` path `^/api(/.*)?$` | `http://gateway:80` (layanan Bolang) |
+| `bertigasamatitut.stei.fun` | `https://localhost:1122` (aaPanel) |
+
+Sebagai alternatif, tunnel bisa dijalankan sebagai container di compose: isi `TUNNEL_TOKEN` di `.env`, lalu `docker compose --profile tunnel up -d`.
 
 Image juga bisa dibangun di laptop untuk arm64, lalu dibawa ke STB:
 
