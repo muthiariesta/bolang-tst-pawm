@@ -1,0 +1,30 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "development": {
+      "developmentClient": false,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://bolang.stei.fun/api",
+        "EXPO_PUBLIC_ORCHESTRATOR_URL": "",
+        "EXPO_PUBLIC_USE_DUMMY": "false"
+      }
+    },
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://bolang.stei.fun/api",
+        "EXPO_PUBLIC_ORCHESTRATOR_URL": "",
+        "EXPO_PUBLIC_USE_DUMMY": "false"
+      }
+    }
+  }
+}
